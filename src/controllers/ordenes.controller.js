@@ -51,8 +51,9 @@ exports.update = async (req, res) => {
   const t = await sequelize.transaction();
   try {
     await Orden.update(req.body, { where: { id: req.params.id }, transaction: t });
-    const ordenActualizada = await Orden.findByPk(req.params.id);
     await t.commit();
+    const ordenActualizada = await Orden.findByPk(req.params.id);
+    
     res.json({ message: 'Orden actualizada correctamente', orden: ordenActualizada });
   } catch (err) {
     await t.rollback();

@@ -27,8 +27,8 @@ exports.update = async (req, res) => {
   const t = await sequelize.transaction();
   try {
     const [updated] = await Cliente.update(req.body, { where: { id: req.params.id }, transaction: t });
-    const clienteActualizado = await Cliente.findByPk(req.params.id);
     await t.commit();
+    const clienteActualizado = await Cliente.findByPk(req.params.id);
     if (updated) {
       res.json({ message: 'Cliente Actualizado', cliente: clienteActualizado });
     } else {

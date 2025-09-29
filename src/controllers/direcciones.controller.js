@@ -26,9 +26,10 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   const t = await sequelize.transaction();
   try {
-    let update = await Direccion.update(req.body, { where: { id: req.params.id }, transaction: t });
-    const direccionActualizada = await Direccion.findByPk(req.params.id);
+    await Direccion.update(req.body, { where: { id: req.params.id }, transaction: t });
     await t.commit();
+    const direccionActualizada = await Direccion.findByPk(req.params.id);
+   
     res.json({ message: 'Dirección actualizada correctamente', data: direccionActualizada });
   } catch (err) {
     await t.rollback();

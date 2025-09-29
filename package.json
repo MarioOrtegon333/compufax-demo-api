@@ -8,9 +8,12 @@
     "dev": "nodemon src/index.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
     "express": "^4.18.2",
-    "sequelize": "^6.32.1",
-    "mysql2": "^3.10.0"
+    "helmet": "^8.1.0",
+    "mysql2": "^3.10.0",
+    "sequelize": "^6.32.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

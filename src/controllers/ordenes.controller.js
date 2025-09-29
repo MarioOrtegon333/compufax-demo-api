@@ -1,84 +1,75 @@
-const Orden = require('../models/orden');
-const sequelize = require('../config/db');
+const ordenesService = require('../services/ordenes.service');
 
 
-exports.getAll = async (req, res) => {
-  const ordenes = await Orden.findAll();
-  res.json(ordenes);
-};
-
-exports.getById = async (req, res) => {
-  const orden = await Orden.findByPk(req.params.id);
-  res.json(orden);
-};
-
-exports.getByFolio = async (req, res) => {
-  const folio = req.params.folio;
+exports.getAll = async (req, res, next) => {
   try {
-    const ordenes = await Orden.findAll({ where: { folio } });
+    const ordenes = await ordenesService.getAllOrdenes();
     res.json(ordenes);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-
-exports.create = async (req, res) => {
-  const { cliente_id, items } = req.body;
-  if (!cliente_id || !Array.isArray(items) || items.length === 0) {
-    return res.status(400).json({ error: 'cliente_id y items son requeridos' });
-  }
-  const folio = generarFolio();
-  const t = await sequelize.transaction();
+exports.getById = async (req, res, next) => {
   try {
-    for (const item of items) {
-      await Orden.create({
-        cliente_id,
-        producto: item.producto,
-        cantidad: item.cantidad,
-        folio
-      }, { transaction: t });
+    const orden = await ordenesService.getOrdenById(req.params.id);
+    if (!orden) {
+      return res.status(404).json({ message: 'Orden no encontrada' });
     }
-    await t.commit();
-    res.json({ folio });
+    res.json(orden);
   } catch (err) {
-    await t.rollback();
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-exports.update = async (req, res) => {
-  const t = await sequelize.transaction();
+exports.getByFolio = async (req, res, next) => {
   try {
-    await Orden.update(req.body, { where: { id: req.params.id }, transaction: t });
-    await t.commit();
-    const ordenActualizada = await Orden.findByPk(req.params.id);
-    
-    res.json({ message: 'Orden actualizada correctamente', orden: ordenActualizada });
+    const ordenes = await ordenesService.getOrdenesByFolio(req.params.folio);
+    res.json(ordenes);
   } catch (err) {
-    await t.rollback();
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-exports.remove = async (req, res) => {
-  const t = await sequelize.transaction();
+
+exports.create = async (req, res, next) => {
+  const { cliente_id, items } = req.body;
   try {
-    await Orden.destroy({ where: { id: req.params.id }, transaction: t });
-    await t.commit();
-    res.json({ message: 'Eliminado' });
+    const result = await ordenesService.createOrden(cliente_id, items);
+    res.json(result);
   } catch (err) {
-    await t.rollback();
-    res.status(500).json({ error: err.message });
+    if (err.message === 'cliente_id y items son requeridos') {
+      return res.status(400).json({ error: err.message });
+    }
+    next(err);
+  }
+};
+
+exports.update = async (req, res, next) => {
+  try {
+    const { updated, ordenActualizada } = await ordenesService.updateOrden(req.params.id, req.body);
+    if (updated) {
+      res.json({ message: 'Orden actualizada correctamente', orden: ordenActualizada });
+    } else {
+      res.status(404).json({ message: 'Orden no encontrada' });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.remove = async (req, res, next) => {
+  try {
+    const deleted = await ordenesService.removeOrden(req.params.id);
+    if (deleted) {
+      res.json({ message: 'Orden eliminada' });
+    } else {
+      res.status(404).json({ message: 'Orden no encontrada' });
+    }
+  } catch (err) {
+    next(err);
   }
 };
 
 
-function generarFolio() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let random = '';
-  for (let i = 0; i < 6; i++) {
-    random += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return 'TEST' + random;
-}
+// ...existing code...

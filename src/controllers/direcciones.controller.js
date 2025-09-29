@@ -1,50 +1,57 @@
-const Direccion = require('../models/direccion');
-const sequelize = require('../config/db');
+const direccionesService = require('../services/direcciones.service');
 
-exports.getAll = async (req, res) => {
-  const direcciones = await Direccion.findAll();
-  res.json(direcciones);
-};
-
-exports.getById = async (req, res) => {
-  const direccion = await Direccion.findByPk(req.params.id);
-  res.json(direccion);
-};
-
-exports.create = async (req, res) => {
-  const t = await sequelize.transaction();
+exports.getAll = async (req, res, next) => {
   try {
-    const direccion = await Direccion.create(req.body, { transaction: t });
-    await t.commit();
+    const direcciones = await direccionesService.getAllDirecciones();
+    res.json(direcciones);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getById = async (req, res, next) => {
+  try {
+    const direccion = await direccionesService.getDireccionById(req.params.id);
+    if (!direccion) {
+      return res.status(404).json({ message: 'Dirección no encontrada' });
+    }
+    res.json(direccion);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.create = async (req, res, next) => {
+  try {
+    const direccion = await direccionesService.createDireccion(req.body);
     res.json({ success: "direccion creada", direccion });
   } catch (err) {
-    await t.rollback();
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-exports.update = async (req, res) => {
-  const t = await sequelize.transaction();
+exports.update = async (req, res, next) => {
   try {
-    await Direccion.update(req.body, { where: { id: req.params.id }, transaction: t });
-    await t.commit();
-    const direccionActualizada = await Direccion.findByPk(req.params.id);
-   
-    res.json({ message: 'Dirección actualizada correctamente', data: direccionActualizada });
+    const { updated, direccionActualizada } = await direccionesService.updateDireccion(req.params.id, req.body);
+    if (updated) {
+      res.json({ message: 'Dirección actualizada correctamente', direccion: direccionActualizada });
+    } else {
+      res.status(404).json({ message: 'Dirección no encontrada' });
+    }
   } catch (err) {
-    await t.rollback();
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-exports.remove = async (req, res) => {
-  const t = await sequelize.transaction();
+exports.remove = async (req, res, next) => {
   try {
-    await Direccion.destroy({ where: { id: req.params.id }, transaction: t });
-    await t.commit();
-    res.json({ message: 'Eliminado' });
+    const deleted = await direccionesService.removeDireccion(req.params.id);
+    if (deleted) {
+      res.json({ message: 'Dirección eliminada' });
+    } else {
+      res.status(404).json({ message: 'Dirección no encontrada' });
+    }
   } catch (err) {
-    await t.rollback();
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
